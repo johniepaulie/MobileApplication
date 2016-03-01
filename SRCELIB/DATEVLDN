@@ -1,0 +1,178 @@
+       IDENTIFICATION DIVISION.
+
+       PROGRAM-ID.    DATEVLDN.
+       AUTHOR.        PDC Host Capability.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT INPUT01  ASSIGN TO INPUT01
+           ORGANIZATION IS SEQUENTIAL
+           ACCESS MODE  IS SEQUENTIAL
+           FILE STATUS  IS WS-FILE-STATUS.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  INPUT01
+           RECORDING MODE IS F
+           LABEL RECORD OMITTED.
+       COPY INPUT01.
+
+       WORKING-STORAGE SECTION.
+
+       01  WS-VARIABLES.
+           05  WS-FILE-STATUS              PIC X(2)   VALUE SPACES.
+           05  WS-OUTPUT-DATE.
+               10 WS-YYYY                 PIC 9(04)  VALUE ZEROES.
+               10 FILLER                   PIC X(01)  VALUE '-'.
+               10 WS-MM                   PIC 9(02)  VALUE ZEROES.
+               10 FILLER                   PIC X(01)  VALUE '-'.
+               10 WS-DD                   PIC 9(02)  VALUE ZEROES.
+           05  WS-QUOTIENT                PIC 9(04).
+           05  WS-TEST-REM                PIC 999.
+           05  WS-LEAP-SW                 PIC 9.
+           05  WS-MESSAGE                  PIC X(40)  VALUE SPACES.
+       01  WS-FLAGS.
+           05  WS-READ-FLAG                PIC X      VALUE SPACE.
+               88  WS-EOF                             VALUE 'E'.
+
+       01  WSC-CONSTANTS.
+           05  WSC-SEPARATOR               PIC X(01) VALUE '-'.
+           05  WSC-MESSAGE-1               PIC X(40) VALUE
+                             'DATE IS NON-NUMERIC OR WITH ZERO VALUE.'.
+           05  WSC-MESSAGE-2               PIC X(40) VALUE
+                             'MONTH IS INVALID.'.
+           05  WSC-MESSAGE-3               PIC X(40) VALUE
+                             'DAY IS INVALID.'.
+           05  WSC-0                       PIC 9(01)  VALUE 0.
+           05  WSC-01                      PIC 9(02)  VALUE 01.
+           05  WSC-02                      PIC 9(02)  VALUE 02.
+           05  WSC-03                      PIC 9(02)  VALUE 03.
+           05  WSC-04                      PIC 9(02)  VALUE 04.
+           05  WSC-05                      PIC 9(02)  VALUE 05.
+           05  WSC-07                      PIC 9(02)  VALUE 07.
+           05  WSC-08                      PIC 9(02)  VALUE 08.
+           05  WSC-10                      PIC 9(02)  VALUE 10.
+           05  WSC-12                      PIC 9(02)  VALUE 12.
+           05  WSC-31                      PIC 9(02)  VALUE 31.
+           05  WSC-30                      PIC 9(02)  VALUE 30.
+           05  WSC-29                      PIC 9(02)  VALUE 29.
+           05  WSC-28                      PIC 9(02)  VALUE 28.
+           05  WSC-400                     PIC 9(03)  VALUE 400.
+           05  WSC-100                     PIC 9(03)  VALUE 100.
+
+       PROCEDURE DIVISION.
+       0000-MAIN.
+           PERFORM 1000-INITIALIZE
+           PERFORM 2000-PROCESS UNTIL WS-EOF
+           PERFORM 9000-FINALIZE
+           .
+
+       1000-INITIALIZE.
+           OPEN INPUT INPUT01
+           IF  WS-FILE-STATUS NOT EQUAL ZEROES
+               MOVE 'I/O ERROR' TO WS-MESSAGE
+               PERFORM 2000-DISPLAY-RESULT
+           END-IF
+           PERFORM 1100-READ-FILE
+           .
+
+       1100-READ-FILE.
+           READ INPUT01
+               AT END SET WS-EOF TO TRUE
+           .
+
+       2000-PROCESS.
+           MOVE WS-INPUT-DATE                TO WS-OUTPUT-DATE
+           PERFORM 1000-VALIDATE-DATE
+           PERFORM 2000-DISPLAY-RESULT
+      *    PERFORM 1100-READ-FILE
+           .
+
+       1000-VALIDATE-DATE.
+           IF  WS-OUTPUT-DATE(1:4) IS NUMERIC      AND
+               WS-OUTPUT-DATE(1:4) > ZEROES        AND
+               WS-OUTPUT-DATE(5:1) EQUAL WSC-SEPARATOR AND
+               WS-OUTPUT-DATE(6:2) IS NUMERIC      AND
+               WS-OUTPUT-DATE(6:2) > ZEROES        AND
+               WS-OUTPUT-DATE(8:1) EQUAL WSC-SEPARATOR AND
+               WS-OUTPUT-DATE(9:2) IS NUMERIC      AND
+               WS-OUTPUT-DATE(9:2) > ZEROES
+               CONTINUE
+           ELSE
+               MOVE WSC-MESSAGE-1          TO WS-MESSAGE
+               PERFORM 2000-DISPLAY-RESULT
+           END-IF
+      *
+           DIVIDE WS-YYYY BY WSC-400 GIVING
+                  WS-QUOTIENT REMAINDER WS-TEST-REM
+           IF  WS-TEST-REM = WSC-0
+               MOVE WSC-01                 TO WS-LEAP-SW
+           ELSE
+               DIVIDE WS-YYYY BY WSC-100 GIVING
+                      WS-QUOTIENT REMAINDER WS-TEST-REM
+               IF  WS-TEST-REM = WSC-0
+                   MOVE WSC-0              TO WS-LEAP-SW
+               ELSE
+                  DIVIDE WS-YYYY BY WSC-04 GIVING
+                         WS-QUOTIENT REMAINDER WS-TEST-REM
+                  IF  WS-TEST-REM = WSC-0
+                      MOVE WSC-01          TO WS-LEAP-SW
+                  END-IF
+               END-IF
+           END-IF
+      *
+           IF  WS-MM > WSC-0 AND <= WSC-12
+               PERFORM 1100-EVALUATE-DATE
+           ELSE
+               MOVE WSC-MESSAGE-2        TO WS-MESSAGE
+               PERFORM 2000-DISPLAY-RESULT
+           END-IF
+           .
+
+       1100-EVALUATE-DATE.
+      *
+           EVALUATE TRUE
+               WHEN WS-MM = WSC-01 OR WSC-03 OR WSC-05 OR WSC-07 OR
+                             WSC-08 OR WSC-10 OR WSC-12
+                   IF  WS-DD < WSC-01 OR > WSC-31
+                       MOVE WSC-MESSAGE-3    TO WS-MESSAGE
+                       PERFORM 2000-DISPLAY-RESULT
+                   END-IF
+               WHEN WS-MM = WSC-02
+                   IF  WS-LEAP-SW = WSC-01
+                       IF  WS-DD < WSC-01 OR > WSC-29
+                           MOVE WSC-MESSAGE-3 TO WS-MESSAGE
+                           PERFORM 2000-DISPLAY-RESULT
+                       END-IF
+                   ELSE
+                       IF  WS-DD < WSC-01 OR > WSC-28
+                           MOVE WSC-MESSAGE-3 TO WS-MESSAGE
+                           PERFORM 2000-DISPLAY-RESULT
+                       END-IF
+                   END-IF
+               WHEN OTHER
+                   IF  WS-DD < WSC-01 OR > WSC-30
+                       MOVE WSC-MESSAGE-3    TO WS-MESSAGE
+                       PERFORM 2000-DISPLAY-RESULT
+                   END-IF
+           END-EVALUATE
+           .
+
+       2000-DISPLAY-RESULT.
+           EVALUATE TRUE
+               WHEN WS-MESSAGE = 'I/O ERROR'
+                   DISPLAY WS-MESSAGE
+                   PERFORM 9000-FINALIZE
+               WHEN WS-MESSAGE > SPACES
+                   DISPLAY WS-OUTPUT-DATE ' IS INVALID BECAUSE '
+                                          WS-MESSAGE
+               WHEN OTHER
+                   DISPLAY WS-OUTPUT-DATE ' IS A VALID DATE.'
+           END-EVALUATE
+           .
+
+       9000-FINALIZE.
+           DISPLAY 'FINISHED.'
+           STOP RUN
+           .

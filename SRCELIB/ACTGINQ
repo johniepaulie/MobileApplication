@@ -1,0 +1,201 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. ACTGINQ.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  WS-MESSAGES.
+           05  WS-MSG-INPUT-NOT-FOUND      PIC X(20) VALUE
+                                           'Input not found.'.
+           05  WS-MSG-END-OF-SEARCH        PIC X(08) VALUE
+                                           'E-O-F'.
+           05  WS-MSG-TABLE-ACCESS-ISSUE   PIC X(08) VALUE
+                                           'E Access'.
+       01  WS-SQL-STATUS.
+           05  WS-SQL-NOT-FOUND            PIC S9(4) COMP VALUE 100.
+           05  WS-SQL-RECORD-FOUND         PIC S9(4) COMP VALUE 0.
+       01  WS-FLAGS.
+           05  WS-EOF-FLAG                 PIC 9(4) COMP  VALUE 0.
+               88  WS-EOF                                 VALUE 1.
+       01  WS-COUNTERS.
+           05  WS-ACCT-CTR                 PIC 9(4) COMP  VALUE 0.
+           05  WS-LENGTH                   PIC 9(4) COMP  VALUE 0.
+       01  WS-RESPONSE.
+           05  WS-ACCOUNT OCCURS 20.
+               10  WS-CLIENTID             PIC X(20) VALUE SPACES.
+               10  WS-PROD-DESC            PIC X(20) VALUE SPACES.
+               10  WS-COPS-IND             PIC X     VALUE SPACES.
+               10  WS-PROD-CRNCY           PIC X(10) VALUE SPACES.
+               10  WS-PROD-TYPE            PIC X(10) VALUE SPACES.
+               10  WS-IS-SRC-ACCT          PIC X     VALUE SPACES.
+               10  WS-IS-DST-ACCT          PIC X     VALUE SPACES.
+               10  WS-CATEGORY-CD          PIC X(5)  VALUE SPACES.
+               10  WS-DETAILS-EXIST        PIC X(1)  VALUE SPACES.
+               10  WS-DISP-ACCT-NO         PIC X(20) VALUE SPACES.
+               10  WS-OFFERS-IND           PIC X     VALUE SPACES.
+               10  WS-BALANCE-AVLBL        PIC S9(7)V9(2) COMP-3
+                                                     VALUE ZERO.
+               10  WS-BALANCE-CURNT        PIC S9(7)V9(2) COMP-3
+                                                     VALUE ZERO.
+               10  WS-BALANCE-LEDGER       PIC S9(7)V9(2) COMP-3
+                                                     VALUE ZERO.
+               10  WS-ACCT-STATUS          PIC X     VALUE SPACES.
+               10  WS-MSG-CODE             PIC X     VALUE SPACES.
+               10  WS-MSG-TEXT             PIC X     VALUE SPACES.
+               10  WS-MSG-TYPE             PIC X     VALUE SPACES.
+               10  WS-TRAN-EXIST           PIC X     VALUE SPACES.
+               10  WS-REWARD-PTS           PIC S9(7)V9(2) COMP-3
+                                                     VALUE ZERO.
+           EXEC SQL
+               INCLUDE SQLCA
+           END-EXEC.
+           EXEC SQL
+               INCLUDE FWACTTBL
+           END-EXEC.
+           EXEC SQL
+               INCLUDE FWUSRTBL
+           END-EXEC.
+
+       LINKAGE SECTION.
+       01  DFHCOMMAREA.
+           05  INQ-REQUEST.
+               10  INQ-REQUEST-CLIENTID         PIC X(36).
+               10  INQ-REQUEST-BEARER-TOKEN     PIC X(43).
+               10  INQ-REQUEST-FILLER1          PIC X(646).
+           05  INQ-RESPONSE REDEFINES INQ-REQUEST.
+               10  WS-RESPONSE-ACCOUNT OCCURS 5.
+                   15  INQ-RESPONSE-ACCT-STATUS PIC X(08).
+                   15  INQ-RESPONSE-BAL-AVAIL   PIC 9(7)V9(2).
+                   15  INQ-RESPONSE-BAL-CURNT   PIC 9(7)V9(2).
+                   15  INQ-RESPONSE-BAL-LEDGR   PIC 9(7)V9(2).
+                   15  INQ-RESPONSE-CATEGORY-CD PIC 9(4).
+                   15  INQ-RESPONSE-COPS-IND    PIC X.
+                   15  INQ-RESPONSE-DETLS-EXIST PIC X(1).
+                   15  INQ-RESPONSE-DISP-ACT-NO PIC X(20).
+                   15  INQ-RESPONSE-ID          PIC X(36).
+                   15  INQ-RESPONSE-IS-DEST-ACCT PIC X.
+                   15  INQ-RESPONSE-IS-SRCE-ACCT PIC X.
+                   15  INQ-RESPONSE-OFFERS-IND  PIC X.
+                   15  INQ-RESPONSE-PROD-CRNCY  PIC X(10).
+                   15  INQ-RESPONSE-PROD-DESC   PIC X(20).
+                   15  INQ-RESPONSE-PROD-TYPE   PIC 9(4).
+                   15  INQ-RESPONSE-REWARD-PTS  PIC 9(9).
+                   15  INQ-RESPONSE-TXN-EXIST   PIC X.
+
+       PROCEDURE DIVISION.
+       0000-MAIN.
+           PERFORM 1000-INITIALIZE
+           PERFORM 2000-PROCESS UNTIL WS-EOF
+           PERFORM 3000-FINALIZE
+           .
+       1000-INITIALIZE.
+           IF EIBCALEN EQUAL ZERO
+               MOVE WS-MSG-INPUT-NOT-FOUND TO WS-CLIENTID(1)
+               PERFORM 3000-FINALIZE
+           END-IF
+           EXEC SQL DECLARE ACCTCSR CURSOR FOR
+               SELECT ACCT_PROD_DESC,
+                      ACCT_COPS_IND,
+                      ACCT_PROD_CRNCY,
+                      ACCT_PROD_TYPE,
+                      ACCT_PROD_DESC,
+                      ACCT_IS_SRCE_ACCT,
+                      ACCT_IS_DEST_ACCT,
+                      ACCT_CATEGORY_CD,
+                      ACCT_OFFERS_IND,
+                      ACCT_STATUS,
+                      ACCT_BAL_AVAIL,
+                      ACCT_BAL_CURNT,
+                      ACCT_BAL_LEDGR,
+                      ACCT_CATEGORY_CD,
+                      ACCT_DETAILS_EXIST,
+                      ACCT_DISP_ACT_NO,
+                      ACCT_ID,
+                      ACCT_REWARD_PTS,
+                      ACCT_TXN_EXIST
+                 FROM IBMUSER.FWACTTBL
+                WHERE ACCT_CLIENT_ID = :INQ-REQUEST-CLIENTID AND
+                      ACCT_BEARER_TOKEN = :INQ-REQUEST-BEARER-TOKEN
+           END-EXEC.
+           EXEC SQL
+               OPEN ACCTCSR
+           END-EXEC
+           INITIALIZE INQ-RESPONSE
+           .
+
+       2000-PROCESS.
+           EXEC SQL
+               FETCH ACCTCSR
+                INTO :ACCT-PROD-DESC,
+                     :ACCT-COPS-IND,
+                     :ACCT-PROD-CRNCY,
+                     :ACCT-PROD-TYPE,
+                     :ACCT-PROD-DESC,
+                     :ACCT-IS-SRCE-ACCT,
+                     :ACCT-IS-DEST-ACCT,
+                     :ACCT-CATEGORY-CD,
+                     :ACCT-OFFERS-IND,
+                     :ACCT-STATUS,
+                     :ACCT-BAL-AVAIL,
+                     :ACCT-BAL-CURNT,
+                     :ACCT-BAL-LEDGR,
+                     :ACCT-CATEGORY-CD,
+                     :ACCT-DETAILS-EXIST,
+                     :ACCT-DISP-ACT-NO,
+                     :ACCT-ID,
+                     :ACCT-REWARD-PTS,
+                     :ACCT-TXN-EXIST
+           END-EXEC
+           EVALUATE TRUE
+               WHEN SQLCODE = WS-SQL-RECORD-FOUND
+                   ADD 1 TO WS-ACCT-CTR
+                   MOVE ACCT-STATUS      TO
+                        INQ-RESPONSE-ACCT-STATUS(WS-ACCT-CTR)
+                   MOVE ACCT-BAL-AVAIL   TO
+                        INQ-RESPONSE-BAL-AVAIL(WS-ACCT-CTR)
+                   MOVE ACCT-BAL-CURNT   TO
+                        INQ-RESPONSE-BAL-CURNT(WS-ACCT-CTR)
+                   MOVE ACCT-BAL-LEDGR   TO
+                        INQ-RESPONSE-BAL-LEDGR(WS-ACCT-CTR)
+                   MOVE ACCT-CATEGORY-CD TO
+                        INQ-RESPONSE-CATEGORY-CD(WS-ACCT-CTR)
+                   MOVE ACCT-COPS-IND    TO
+                        INQ-RESPONSE-COPS-IND(WS-ACCT-CTR)
+                   MOVE ACCT-DETAILS-EXIST TO
+                        INQ-RESPONSE-DETLS-EXIST(WS-ACCT-CTR)
+                   MOVE ACCT-ID          TO
+                        INQ-RESPONSE-ID(WS-ACCT-CTR)
+                   MOVE ACCT-DISP-ACT-NO  TO
+                        INQ-RESPONSE-DISP-ACT-NO(WS-ACCT-CTR)
+                   MOVE ACCT-IS-SRCE-ACCT TO
+                        INQ-RESPONSE-IS-SRCE-ACCT(WS-ACCT-CTR)
+                   MOVE ACCT-IS-DEST-ACCT TO
+                        INQ-RESPONSE-IS-DEST-ACCT(WS-ACCT-CTR)
+                   MOVE ACCT-OFFERS-IND  TO
+                        INQ-RESPONSE-OFFERS-IND(WS-ACCT-CTR)
+                   MOVE ACCT-PROD-CRNCY  TO
+                        INQ-RESPONSE-PROD-CRNCY(WS-ACCT-CTR)
+                   MOVE ACCT-PROD-DESC   TO
+                        INQ-RESPONSE-PROD-DESC(WS-ACCT-CTR)
+                   MOVE ACCT-PROD-TYPE   TO
+                        INQ-RESPONSE-PROD-TYPE(WS-ACCT-CTR)
+                   MOVE ACCT-REWARD-PTS  TO
+                        INQ-RESPONSE-REWARD-PTS(WS-ACCT-CTR)
+                   MOVE ACCT-TXN-EXIST   TO
+                        INQ-RESPONSE-TXN-EXIST(WS-ACCT-CTR)
+               WHEN SQLCODE = WS-SQL-NOT-FOUND
+                   ADD 1 TO WS-ACCT-CTR
+                   MOVE WS-MSG-END-OF-SEARCH TO
+                        INQ-RESPONSE-ACCT-STATUS(WS-ACCT-CTR)
+                   SET WS-EOF TO TRUE
+               WHEN SQLCODE = WS-SQL-NOT-FOUND
+                   MOVE WS-MSG-END-OF-SEARCH TO
+                        INQ-RESPONSE-ACCT-STATUS(1)
+                   SET WS-EOF TO TRUE
+               WHEN OTHER
+                   MOVE WS-MSG-TABLE-ACCESS-ISSUE TO
+                        INQ-RESPONSE-ACCT-STATUS(1)
+                   SET WS-EOF TO TRUE
+           END-EVALUATE
+           .
+       3000-FINALIZE.
+           EXEC CICS RETURN
+           END-EXEC.

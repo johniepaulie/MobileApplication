@@ -1,0 +1,89 @@
+      ******************************************************************
+      * DCLGEN TABLE(DSN81110.FWACTTBL)                                *
+      *        LIBRARY(EMPOT17.DCLGEN(FWACTTBL))                       *
+      *        ACTION(REPLACE)                                         *
+      *        LANGUAGE(COBOL)                                         *
+      *        QUOTE                                                   *
+      * ... IS THE DCLGEN COMMAND THAT MADE THE FOLLOWING STATEMENTS   *
+      ******************************************************************
+           EXEC SQL DECLARE DSN81110.FWACTTBL TABLE
+           ( ACCT_CLIENT_ID                 CHAR(36),
+             ACCT_BEARER_TOKEN              CHAR(43),
+             ACCT_DISP_ACT_NO               CHAR(20),
+             ACCT_ID                        CHAR(36),
+             ACCT_TYPE                      CHAR(9),
+             ACCT_STATUS                    CHAR(8),
+             ACCT_FIRSTNAME                 CHAR(20),
+             ACCT_LASTNAME                  CHAR(20),
+             ACCT_SUFFIXNAME                CHAR(5),
+             ACCT_ADDRESS_1                 CHAR(20),
+             ACCT_ADDRESS_2                 CHAR(20),
+             ACCT_ADDRESS_3                 CHAR(20),
+             ACCT_ADDRESS_4                 CHAR(20),
+             ACCT_CITY                      CHAR(20),
+             ACCT_STATE                     CHAR(20),
+             ACCT_POSTAL_CODE               CHAR(5),
+             ACCT_COUNTRY                   CHAR(20),
+             ACCT_HOME_EMAIL                CHAR(20),
+             ACCT_BUS_EMAIL                 CHAR(20),
+             ACCT_HOME_PHONE                CHAR(12),
+             ACCT_BUS_PHONE                 CHAR(12),
+             ACCT_BIRTH_DATE                CHAR(20),
+             ACCT_COPS_IND                  CHAR(1),
+             ACCT_PROD_CRNCY                CHAR(10),
+             ACCT_PROD_TYPE                 SMALLINT,
+             ACCT_PROD_DESC                 CHAR(20),
+             ACCT_DETAILS_EXIST             CHAR(1),
+             ACCT_IS_SRCE_ACCT              CHAR(1),
+             ACCT_IS_DEST_ACCT              CHAR(1),
+             ACCT_CATEGORY_CD               SMALLINT,
+             ACCT_OFFERS_IND                CHAR(1),
+             ACCT_BAL_AVAIL                 DECIMAL(9, 2),
+             ACCT_BAL_CURNT                 DECIMAL(9, 2),
+             ACCT_BAL_LEDGR                 DECIMAL(9, 2),
+             ACCT_REWARD_PTS                INTEGER,
+             ACCT_TXN_EXIST                 CHAR(1)
+           ) END-EXEC.
+      ******************************************************************
+      * COBOL DECLARATION FOR TABLE DSN81110.FWACTTBL                  *
+      ******************************************************************
+       01  DCLFWACTTBL.
+           10 ACCT-CLIENT-ID       PIC X(36).
+           10 ACCT-BEARER-TOKEN    PIC X(43).
+           10 ACCT-DISP-ACT-NO     PIC X(20).
+           10 ACCT-ID              PIC X(36).
+           10 ACCT-TYPE            PIC X(9).
+           10 ACCT-STATUS          PIC X(8).
+           10 ACCT-FIRSTNAME       PIC X(20).
+           10 ACCT-LASTNAME        PIC X(20).
+           10 ACCT-SUFFIXNAME      PIC X(5).
+           10 ACCT-ADDRESS-1       PIC X(20).
+           10 ACCT-ADDRESS-2       PIC X(20).
+           10 ACCT-ADDRESS-3       PIC X(20).
+           10 ACCT-ADDRESS-4       PIC X(20).
+           10 ACCT-CITY            PIC X(20).
+           10 ACCT-STATE           PIC X(20).
+           10 ACCT-POSTAL-CODE     PIC X(5).
+           10 ACCT-COUNTRY         PIC X(20).
+           10 ACCT-HOME-EMAIL      PIC X(20).
+           10 ACCT-BUS-EMAIL       PIC X(20).
+           10 ACCT-HOME-PHONE      PIC X(12).
+           10 ACCT-BUS-PHONE       PIC X(12).
+           10 ACCT-BIRTH-DATE      PIC X(20).
+           10 ACCT-COPS-IND        PIC X(1).
+           10 ACCT-PROD-CRNCY      PIC X(10).
+           10 ACCT-PROD-TYPE       PIC S9(4) USAGE COMP.
+           10 ACCT-PROD-DESC       PIC X(20).
+           10 ACCT-DETAILS-EXIST   PIC X(1).
+           10 ACCT-IS-SRCE-ACCT    PIC X(1).
+           10 ACCT-IS-DEST-ACCT    PIC X(1).
+           10 ACCT-CATEGORY-CD     PIC S9(4) USAGE COMP.
+           10 ACCT-OFFERS-IND      PIC X(1).
+           10 ACCT-BAL-AVAIL       PIC S9(7)V9(2) USAGE COMP-3.
+           10 ACCT-BAL-CURNT       PIC S9(7)V9(2) USAGE COMP-3.
+           10 ACCT-BAL-LEDGR       PIC S9(7)V9(2) USAGE COMP-3.
+           10 ACCT-REWARD-PTS      PIC S9(9) USAGE COMP.
+           10 ACCT-TXN-EXIST       PIC X(1).
+      ******************************************************************
+      * THE NUMBER OF COLUMNS DESCRIBED BY THIS DECLARATION IS 36      *
+      ******************************************************************

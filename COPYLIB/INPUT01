@@ -1,0 +1,2 @@
+       01  WS-INPUT.
+           05  WS-INPUT-DATE               PIC X(10).

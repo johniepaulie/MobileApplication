@@ -1,0 +1,106 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. AUTHLOG.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  WS-MESSAGES.
+           05  WS-MSG-USER-NOT-FOUND       PIC X(20)   VALUE
+                                           'User not found.'.
+           05  WS-MSG-INPUT-NOT-FOUND      PIC X(20)   VALUE
+                                           'Input not found.'.
+           05  WS-MSG-TABLE-ACCESS-ISSUE   PIC X(20)   VALUE
+                                           'Table access issue.'.
+       01  WS-SQL-STATUS.
+           05  WS-SQL-NOT-FOUND       COMP PIC S9(4)   VALUE 100.
+           05  WS-SQL-RECORD-FOUND    COMP PIC S9(4)   VALUE 0.
+
+           EXEC SQL
+               INCLUDE SQLCA
+           END-EXEC.
+
+           EXEC SQL
+               INCLUDE FWUSRTBL
+           END-EXEC.
+
+       LINKAGE SECTION.
+       01  DFHCOMMAREA.
+           05  DFH-REQUEST.
+               10  DFH-REQUEST-NAME        PIC X(20).
+               10  DFH-REQUEST-PASSWORD    PIC X(20).
+               10  DFH-REQUEST-FILLER      PIC X(18).
+           05  DFH-RESPONSE1 REDEFINES DFH-REQUEST.
+               10  DFH-RESPONSE-OFFER-OK   PIC X(01).
+               10  DFH-RESPONSE-P2P-REQD   PIC X(01).
+               10  DFH-RESPONSE-TOKEN      PIC X(36).
+               10  DFH-RESPONSE-NAME       PIC X(20).
+           05  DFH-RESPONSE2 REDEFINES DFH-REQUEST.
+               10  DFH-RESPONSE-FILLER1    PIC X(02).
+               10  DFH-RESPONSE-MESSAGE    PIC X(20).
+               10  DFH-RESPONSE-FILLER2    PIC X(36).
+
+       PROCEDURE DIVISION.
+       0000-MAIN.
+           PERFORM 1000-INITIALIZE
+           PERFORM 2000-PROCESS
+           PERFORM 3000-FINALIZE
+           .
+
+       1000-INITIALIZE.
+           DISPLAY 'REQUEST : '  DFH-REQUEST-NAME '|'
+                    DFH-REQUEST-PASSWORD
+           IF EIBCALEN EQUAL ZERO
+               MOVE WS-MSG-INPUT-NOT-FOUND TO DFH-RESPONSE-MESSAGE
+               PERFORM 3000-FINALIZE
+           END-IF
+           .
+
+       2000-PROCESS.
+      *    EXEC CICS SEND TEXT
+      *        FROM(DFH-REQUEST-NAME)
+      *    END-EXEC.
+      *    EXEC CICS SEND TEXT
+      *        FROM(DFH-REQUEST-PASSWORD)
+      *    END-EXEC.
+
+           EXEC SQL
+               SELECT USER_P2P_REQD,
+                      USER_OFFER_OK,
+                      USER_TOKEN
+               INTO  :USER-P2P-REQD,
+                     :USER-OFFER-OK,
+                     :USER-TOKEN
+               FROM   IBMUSER.FWUSRTBL
+               WHERE  USER_NAME     = :DFH-REQUEST-NAME AND
+                      USER_PASSWORD = :DFH-REQUEST-PASSWORD
+               FETCH FIRST ROW ONLY
+           END-EXEC.
+
+      *    EXEC CICS SEND TEXT
+      *        FROM(USER-P2P-REQD)
+      *    END-EXEC.
+
+      *    EXEC CICS SEND TEXT
+      *        FROM(USER-OFFER-OK)
+      *    END-EXEC.
+
+
+           EVALUATE TRUE
+               WHEN SQLCODE = WS-SQL-RECORD-FOUND
+                  MOVE DFH-REQUEST-NAME       TO DFH-RESPONSE-NAME
+                  MOVE USER-P2P-REQD          TO DFH-RESPONSE-P2P-REQD
+                  MOVE USER-OFFER-OK          TO DFH-RESPONSE-OFFER-OK
+                  MOVE USER-TOKEN             TO DFH-RESPONSE-TOKEN
+               WHEN SQLCODE = WS-SQL-NOT-FOUND
+                   MOVE WS-MSG-USER-NOT-FOUND TO DFH-RESPONSE-MESSAGE
+                   MOVE SPACES TO DFH-RESPONSE-FILLER1
+                                  DFH-RESPONSE-FILLER2
+               WHEN OTHER
+                  MOVE WS-MSG-TABLE-ACCESS-ISSUE TO DFH-RESPONSE-MESSAGEE
+                   MOVE SPACES TO DFH-RESPONSE-FILLER1
+                                  DFH-RESPONSE-FILLER2
+           END-EVALUATE
+           .
+
+       3000-FINALIZE.
+           DISPLAY 'RESPONSE: ' DFH-RESPONSE1
+           EXEC CICS RETURN
+           END-EXEC.

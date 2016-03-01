@@ -1,0 +1,27 @@
+      ******************************************************************
+      * DCLGEN TABLE(DSN81110.FWUSRTBL)                                *
+      *        LIBRARY(EMPOT17.DCLGEN(FWUSRTBL))                       *
+      *        ACTION(REPLACE)                                         *
+      *        LANGUAGE(COBOL)                                         *
+      *        QUOTE                                                   *
+      * ... IS THE DCLGEN COMMAND THAT MADE THE FOLLOWING STATEMENTS   *
+      ******************************************************************
+           EXEC SQL DECLARE DSN81110.FWUSRTBL TABLE
+           ( USER_NAME                      CHAR(20),
+             USER_PASSWORD                  CHAR(20),
+             USER_P2P_REQD                  CHAR(1),
+             USER_OFFER_OK                  CHAR(1),
+             USER_TOKEN                     CHAR(36)
+           ) END-EXEC.
+      ******************************************************************
+      * COBOL DECLARATION FOR TABLE DSN81110.FWUSRTBL                  *
+      ******************************************************************
+       01  DCLFWUSRTBL.
+           10 USER-NAME            PIC X(20).
+           10 USER-PASSWORD        PIC X(20).
+           10 USER-P2P-REQD        PIC X(1).
+           10 USER-OFFER-OK        PIC X(1).
+           10 USER-TOKEN           PIC X(36).
+      ******************************************************************
+      * THE NUMBER OF COLUMNS DESCRIBED BY THIS DECLARATION IS 5       *
+      ******************************************************************
